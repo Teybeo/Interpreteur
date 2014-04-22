@@ -1,1 +1,10 @@
-Si 1
+var = 2
+abc = 42
+arbre = var * abc
+SI arbre + abc == 37
+5
+SI ks != 0
+ks = 1
+SI ks == 1
+ks = 2
+ks

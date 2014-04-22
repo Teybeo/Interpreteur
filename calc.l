@@ -29,14 +29,14 @@ identifiant {lettre}({lettre}|{chiffre})*
 	return NOMBRE;
 }
 
-{identifiant}    {
-	yylval.node = create_node(VARIABLE);
-	return(VARIABLE);
-}
-
 "SI" {
 	yylval.node = create_node(TEST);
 	return TEST;
+}
+
+{identifiant}    {
+	yylval.node = create_node(VARIABLE);
+	return(VARIABLE);
 }
 
 "+" {

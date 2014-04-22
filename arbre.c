@@ -9,8 +9,9 @@
 		
 extern char* yytext;
 Node_var* list_var = NULL;
-double evaluate(Node* root);
-Node_var* create_var(char* name);
+void evaluate(Node* root);
+double eval_expression(Node* root);
+Node_var* create_var(char* name); 
 Node_var* search_var(char* name);
 void set_var(Node_var* variable, Node* expression_src);
 void push_var(Node_var* var);
@@ -18,69 +19,78 @@ void push_var(Node_var* var);
 void eval(Node* root) {
 
 	display_tree(root, 0);
+	
+	evaluate(root);
 	putchar('\n');
-	
-	
-	printf("Res: %f\n", evaluate(root));
 }
 
-double evaluate(Node* root) {
+void evaluate(Node* root) {
 	
 	if (root == NULL)
-		return 1;
-	
-	if (root->type == AFFECTATION)
-	{
-		set_var(root->children[0]->var, root->children[1]);
-		return evaluate(root->children[0]);
-	}
-	if (root->type == NOMBRE)
-		return root->val;
-	if (root->type == VARIABLE)
-		return root->var->value;
-	if (root->type == PLUS)
-		return evaluate(root->children[0]) + evaluate(root->children[1]);
-	if (root->type == MOINS)
-		return evaluate(root->children[0]) - evaluate(root->children[1]);
-	if (root->type == MULT)
-		return evaluate(root->children[0]) * evaluate(root->children[1]);
-	if (root->type == DIVISION)
-		return evaluate(root->children[0]) / evaluate(root->children[1]);
-	if (root->type == SUPERIOR)
-		return (evaluate(root->children[0]) > evaluate(root->children[1]));
-	if (root->type == INFERIOR)
-		return (evaluate(root->children[0]) < evaluate(root->children[1]));
-	if (root->type == EQUAL)
-		return (evaluate(root->children[0]) == evaluate(root->children[1]));
-	if (root->type == DIFFERENT)
-		return (evaluate(root->children[0]) != evaluate(root->children[1]));
-	if (root->type == SUPERIOR_EQUAL)
-		return (evaluate(root->children[0]) >= evaluate(root->children[1]));
-	if (root->type == INFERIOR_EQUAL)
-		return (evaluate(root->children[0]) <= evaluate(root->children[1]));
+		return;
+
+	if (root->type != TEST)
+		printf("Result: %lf\n", eval_expression(root));
+
 	if (root->type == TEST)
 	{
-		// On évalue la valeur de la condition
-		int condition = evaluate(root->children[0]);
+		// On Ã©value la valeur de la condition
+		int condition = eval_expression(root->children[0]);
 		
 		if (condition)
 		{
-			// Si vraie, on exécute chacune des lignes associées
+			// Si vraie, on exÃ©cute chacune des lignes associÃ©es
 			int j;
 			for (j = 0; j < root->nb_children - 1; j++)
 				evaluate(root->children[1 + j]);
 		}
-		
-		return condition;
 	}
+	/*
 	if (root->type == MULTITEST) {
 		
 		int i;
 		for (i = 0; i < root->nb_children; i++) {
 			if (evaluate(root->children[i]) == 1)
-				return 0;
+				return;
 		}
+	}
+	*/
+}
 
+double eval_expression(Node* root) {
+	
+	switch (root->type) {
+
+	case AFFECTATION:
+		set_var(root->children[0]->var, root->children[1]);
+		return eval_expression(root->children[0]);
+	case NOMBRE:
+		return root->val;
+	case VARIABLE:
+		return root->var->value;
+	case PLUS:
+		return eval_expression(root->children[0]) + eval_expression(root->children[1]);
+	case MOINS:
+		return eval_expression(root->children[0]) - eval_expression(root->children[1]);
+	case MULT:
+		return eval_expression(root->children[0]) * eval_expression(root->children[1]);
+	case DIVISION:
+		return eval_expression(root->children[0]) / eval_expression(root->children[1]);
+	case SUPERIOR:
+		return (eval_expression(root->children[0]) > eval_expression(root->children[1]));
+	case INFERIOR:
+		return (eval_expression(root->children[0]) < eval_expression(root->children[1]));
+	case EQUAL:
+		return (eval_expression(root->children[0]) == eval_expression(root->children[1]));
+	case DIFFERENT:
+		return (eval_expression(root->children[0]) != eval_expression(root->children[1]));
+	case SUPERIOR_EQUAL:
+		return (eval_expression(root->children[0]) >= eval_expression(root->children[1]));
+	case INFERIOR_EQUAL:
+		return (eval_expression(root->children[0]) <= eval_expression(root->children[1]));
+	default:
+		printf("Error: unknown expression type: %d\n", root->type);
+		break;
 	}
 }
 
@@ -138,7 +148,7 @@ Node_var* create_var(char* name) {
 
 void set_var(Node_var* variable, Node* expression_src) {
 
-	variable->value = evaluate(expression_src);
+	variable->value = eval_expression(expression_src);
 
 }
 
@@ -147,6 +157,9 @@ Node* set_children(Node* parent, Node* child_1, Node* child_2) {
 	parent->children = malloc(sizeof(Node) * 2);
 	parent->children[0] = child_1;
 	parent->children[1] = child_2;
+
+	parent->nb_children = ((child_1 != NULL) + (child_2 != NULL));
+
 	//display_tree(parent, 0);
 //	puts("-------");
 	return parent;
@@ -159,13 +172,13 @@ void display_tree(Node* root, int level) {
 		"- " ,
 		"* " ,
 		"/ " ,
-		"== ",
+		"= ",
 		"> " ,
 		"< " ,
 		"!= ",
 		">= ",
 		"<= ",
-		"= "
+		"== ",
 	};
 	
 	if (root == NULL)
@@ -198,6 +211,12 @@ void display_tree(Node* root, int level) {
 			display_tree(root->children[0], level+1);
 			DECALE_TEXTE(level)
 			printf("%s\n", op_symbol[root->type - PLUS]);
+			display_tree(root->children[1], level+1);
+			break;
+		case TEST:
+			display_tree(root->children[0], level+1);
+			DECALE_TEXTE(level);
+			printf("SI\n");
 			display_tree(root->children[1], level+1);
 			break;
 		default:

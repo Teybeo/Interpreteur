@@ -20,6 +20,7 @@ typedef struct Node {
 		struct Node** children;
 	};
 	int nb_children;
+	
 } Node;
 
 extern Node_var* list_var;
